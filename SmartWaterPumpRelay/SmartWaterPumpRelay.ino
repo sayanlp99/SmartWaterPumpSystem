@@ -1,13 +1,14 @@
 #include <ESP8266WiFi.h>
+
+void handlePump();
+void readPump();
+
 String pumpStatus;
 String waterLevel;
 String response;
-
 String espTankUrl = "http://10.0.0.7/";
 
 int RELAY = 2;;
-
-void handlePump();
 
 const char* ssid     = "Wi-Fi";
 const char* password = "00000000";
@@ -30,6 +31,10 @@ void handlePump(){
     Serial.println("handlePump: " + response);
     server.send(200, "text/html", response);
   }
+}
+
+void readPump(){
+  
 }
 
 bool isPumpOn(){
@@ -63,11 +68,18 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
   if(WiFi.status()==WL_CONNECTED){
+    server.on("/getPumpState", readPump);
     server.on("/changePumpState", handlePump);
   }
   server.begin();
+  
 }
 
 void loop() {
-  
+  if(isTankFull()){
+    digitalWrite(RELAY, LOW);
+  }
+  else{
+    if()
+  }
 }

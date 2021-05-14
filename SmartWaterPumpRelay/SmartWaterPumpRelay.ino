@@ -1,58 +1,59 @@
 #include <ESP8266WiFi.h>
+String pumpStatus;
+String waterLevel;
+String response;
 
-void handleRoot();
-void handleRelay();
+String espTankUrl = "http://10.0.0.7/";
 
-const char* ssid     = "ESP8266";
-const char* password = "98989898";
+int RELAY = 2;;
 
-const char MAIN_page[] PROGMEM = R"=====(
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Smart Water pump System</title>
-  <style>
-    font-family: Helvetica;
-    display: inline-block;
-    margin: 0px auto;
-    text-align: center;
-      .button{
-        background-color: #195B6A;
-        border: none;
-        color: white;
-        padding: 16px 40px
-      };
-      text-decoration: none;
-      font-size: 30px;
-      margin: 2px;
-      cursor: pointer;
-      .button2{
-        background-color: #77878A
-      };
-    </style>
-</head>
-<body>
+void handlePump();
 
-</body>
-</html>
-)=====";
+const char* ssid     = "Wi-Fi";
+const char* password = "00000000";
 
 WiFiServer server(80);
 
-void handleRoot() {
- String s = MAIN_page; //Read HTML contents
- server.send(200, "text/html", s); //Send web page
+bool isTankFull(){
+  return false;
 }
 
-bool isTankFull(){
+void handlePump(){
+  if(isPumpOn()){
+    response = "{\"message\":\"Pump already ON\"}";
+    Serial.println("handlePump: " + response);
+    server.send(200, "text/html", response);
+  }
+  else{
+    digitalWrite(RELAY, HIGH);
+    response = "{\"message\":\"Pump turned ON successfully\"}";
+    Serial.println("handlePump: " + response);
+    server.send(200, "text/html", response);
+  }
+}
+
+bool isPumpOn(){
+  if(digitalRead(RELAY)){
+    Serial.println("PUMP is on");
+    return true;
+  }
+  else{
+    Seial.println("PUMP is off");
+    return false;
+  }
+}
+
+void getDataFromTank(){
+  
 }
 
 void setup() {
-  pinMode(2, OUTPUT);
+  pinMode(RELAY, OUTPUT);
   Serial.begin(9600);
+  Serial.println("=====ESP restarting=====")
   Serial.print("Connecting to ");
   Serial.println(ssid);
-  WiFi.softAP(ssid, password);
+  WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
@@ -61,15 +62,12 @@ void setup() {
   Serial.println("WiFi connected.");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-  if(WiFi.status()==WL_CONNECTED)
-  {
-    server.on("/", handleRoot);
-    server.on("/turn_relay_on", handleRelay); //form action is handled here
+  if(WiFi.status()==WL_CONNECTED){
+    server.on("/changePumpState", handlePump);
   }
   server.begin();
 }
 
 void loop() {
-  getDataFromTank();
-
+  
 }

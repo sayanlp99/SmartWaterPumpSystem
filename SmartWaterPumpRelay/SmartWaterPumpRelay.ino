@@ -22,7 +22,7 @@ const char* ssid     = "Wi-Fi";
 const char* password = "00000000";
 
 HTTPClient http;
-WiFiServer server(80);
+ESP8266WebServer server(80);
 
 void fetchDataFromTank(){
   String query = espTankUrl + "getDataFromTank";
@@ -61,6 +61,10 @@ void handlePump(){
   }
 }
 
+void readPump(){
+  Serial.println("Reading PUMP");
+}
+
 bool isPumpOn(){
   if(digitalRead(RELAY)){
     Serial.println("PUMP is on");
@@ -96,4 +100,5 @@ void setup() {
 
 void loop() {
   fetchDataFromTank();
+  delay(5000);
 }

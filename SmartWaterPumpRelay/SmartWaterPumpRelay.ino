@@ -2,6 +2,9 @@
 
 void handlePump();
 void readPump();
+void fetchDataFromTank();
+
+bool isTankFull;
 
 String pumpStatus;
 String waterLevel;
@@ -15,8 +18,8 @@ const char* password = "00000000";
 
 WiFiServer server(80);
 
-bool isTankFull(){
-  return false;
+void fetchDataFromTank(){
+  
 }
 
 void handlePump(){
@@ -48,10 +51,6 @@ bool isPumpOn(){
   }
 }
 
-void getDataFromTank(){
-  
-}
-
 void setup() {
   pinMode(RELAY, OUTPUT);
   Serial.begin(9600);
@@ -76,10 +75,5 @@ void setup() {
 }
 
 void loop() {
-  if(isTankFull()){
-    digitalWrite(RELAY, LOW);
-  }
-  else{
-    if()
-  }
+  
 }

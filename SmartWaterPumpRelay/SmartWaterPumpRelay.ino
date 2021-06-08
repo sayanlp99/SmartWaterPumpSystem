@@ -3,23 +3,29 @@
 #include <ESP8266WebServer.h>
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
+#include <RTClib.h>
+
+
+RTC_DS3231 rtc;
 
 bool isPumpOn();
 void handlePump();
 void readPump();
 void fetchDataFromTank();
+void getTime();
 
 bool isTankFull;
 
 String pumpStatus;
 String waterLevel;
 String response;
+String nowTime;
 String espTankUrl = "http://10.0.0.7/";
 
-int RELAY = 2;;
+int RELAY = 2;
 
-const char* ssid     = "Wi-Fi";
-const char* password = "00000000";
+const char* ssid     = "Sam_2.4";
+const char* password = "7980362177";
 
 HTTPClient http;
 ESP8266WebServer server(80);
@@ -36,7 +42,7 @@ void fetchDataFromTank(){
     Serial.println(payload);
     const size_t capacity = JSON_OBJECT_SIZE(2) + 40;
     DynamicJsonBuffer jsonBuffer(capacity);
-    const char* json = payload.c_str();;
+    const char* json = payload.c_str();
     JsonObject& root = jsonBuffer.parseObject(json);
     const char* water_level = root["water_level"];
     const char* pump_status = root["pump_status"];
@@ -76,6 +82,20 @@ bool isPumpOn(){
   }
 }
 
+void getTime(){
+  nowTime = "";
+  DateTime now = rtc.now();
+  if ((now.hour()) < 10)
+    nowTime += "0";
+  nowTime += now.hour();
+  nowTime += ":";
+  if ((now.minute()) < 10)
+    nowTime += "0";
+  nowTime += now.minute();
+  Serial.print(F("Time:"));
+  Serial.println(nowTime);
+}
+
 void setup() {
   pinMode(RELAY, OUTPUT);
   Serial.begin(9600);
@@ -99,6 +119,14 @@ void setup() {
 }
 
 void loop() {
-  fetchDataFromTank();
+  if(nowTime == "5:00" || nowTime == "5:01"){
+    fetchDataFromTank();
+    if(waterLevel != "100" && pumpStatus != "1"){
+      digitalWrite(RELAY, HIGH);  
+    }
+    else{
+      Serial.println("Water is full or Pump is already on");  
+    }
+  }
   delay(5000);
 }

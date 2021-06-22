@@ -2,25 +2,23 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WebServer.h>
 #include <WiFiClientSecure.h>
-#include <ArduinoJson.h>
-#include <RTClib.h>
+#include <WiFiClient.h>
 
+WiFiClient wifiClient;
 
-RTC_DS3231 rtc;
 
 bool isPumpOn();
 void handlePump();
 void readPump();
 void fetchDataFromTank();
-void getTime();
+void parseJSON(String);
 
 bool isTankFull;
 
 String pumpStatus;
 String waterLevel;
 String response;
-String nowTime;
-String espTankUrl = "http://10.0.0.7/";
+String espTankUrl = "http://192.168.35.112/";
 
 int RELAY = 2;
 
@@ -32,7 +30,7 @@ ESP8266WebServer server(80);
 
 void fetchDataFromTank(){
   String query = espTankUrl + "getDataFromTank";
-  http.begin(query);
+  http.begin(wifiClient, query);
   int httpCode = http.GET();
   Serial.print(F("HTTPCODE:"));
   Serial.println(httpCode);
@@ -40,17 +38,36 @@ void fetchDataFromTank(){
     String payload = http.getString();
     Serial.print(F("Raw Data from Internet:"));
     Serial.println(payload);
-    const size_t capacity = JSON_OBJECT_SIZE(2) + 40;
-    DynamicJsonBuffer jsonBuffer(capacity);
-    const char* json = payload.c_str();
-    JsonObject& root = jsonBuffer.parseObject(json);
-    const char* water_level = root["water_level"];
-    const char* pump_status = root["pump_status"];
-    waterLevel = water_level;
-    pumpStatus = pump_status;
+    parseJSON(payload);
     http.end();
     Serial.println("W: " + waterLevel + "    P: " + pumpStatus);
   }
+}
+
+int recWaterLevel;
+int recPumpStatus;
+
+void parseJSON(String jsonRes){
+  char DincWl = jsonRes.charAt(17);
+  Serial.println("DincWl: " + DincWl);
+  String twL;
+  String tPs;
+  if(DincWl == '"'){
+    Serial.println("if");
+    twL = jsonRes.substring(16,17);
+    Serial.println("twL: " + twL);
+    tPs = jsonRes.substring(37,38);
+    Serial.println("tPs: " + tPs);
+  }
+  else{
+    Serial.println("else");
+    twL = jsonRes.substring(16,18);
+    Serial.println("twL: " + twL);
+    tPs = jsonRes.substring(38,39);
+    Serial.println("tPs: " + tPs);
+  }
+  pumpStatus = tPs;
+  waterLevel = twL;
 }
 
 void handlePump(){
@@ -82,20 +99,6 @@ bool isPumpOn(){
   }
 }
 
-void getTime(){
-  nowTime = "";
-  DateTime now = rtc.now();
-  if ((now.hour()) < 10)
-    nowTime += "0";
-  nowTime += now.hour();
-  nowTime += ":";
-  if ((now.minute()) < 10)
-    nowTime += "0";
-  nowTime += now.minute();
-  Serial.print(F("Time:"));
-  Serial.println(nowTime);
-}
-
 void setup() {
   pinMode(RELAY, OUTPUT);
   Serial.begin(9600);
@@ -119,14 +122,16 @@ void setup() {
 }
 
 void loop() {
-  if(nowTime == "5:00" || nowTime == "5:01"){
-    fetchDataFromTank();
-    if(waterLevel != "100" && pumpStatus != "1"){
-      digitalWrite(RELAY, HIGH);  
-    }
-    else{
-      Serial.println("Water is full or Pump is already on");  
-    }
-  }
-  delay(5000);
+//   if(nowTime == "5:00" || nowTime == "5:01"){
+//     fetchDataFromTank();
+//     if(waterLevel != "100" && pumpStatus != "1"){
+//       digitalWrite(RELAY, HIGH);  
+//     }
+//     else{
+//       Serial.println("Water is full or Pump is already on");  
+//     }
+//   }
+//   delay(5000);
+fetchDataFromTank();
+delay(5000);
 }
